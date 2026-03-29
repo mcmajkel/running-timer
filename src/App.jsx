@@ -317,27 +317,27 @@ export default function App() {
 
         {/* Top bar */}
         <div style={{
-          padding: "18px 20px 14px",
+          padding: `max(18px, env(safe-area-inset-top)) 20px 14px`,
           display: "flex", alignItems: "center", justifyContent: "space-between",
           borderBottom: `1px solid ${t.accent}20`,
         }}>
-          <span style={{ fontSize: 11, letterSpacing: 3, color: t.dim, textTransform: "uppercase", fontWeight: 700 }}>
+          <span style={{ fontSize: 12, letterSpacing: 3, color: t.accent, textTransform: "uppercase", fontWeight: 700 }}>
             TYG {plan.week}
           </span>
           {!isActive && phase !== "done" && showHidden && (
             <button onClick={() => setShowHidden(false)} style={{
-              background: "none", border: "none", color: t.dim, fontSize: 11,
-              letterSpacing: 2, textTransform: "uppercase", cursor: "pointer", padding: 0,
+              background: "none", border: "none", color: t.accent, fontSize: 12,
+              letterSpacing: 2, textTransform: "uppercase", cursor: "pointer", padding: 0, fontWeight: 600,
             }}>
               ✕ POKAŻ AKTYWNE
             </button>
           )}
           {isActive && (
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 10, color: gpsStatus === "active" ? t.accent : t.dim, letterSpacing: 1 }}>
+              <span style={{ fontSize: 11, color: gpsStatus === "active" ? t.accent : "#999", letterSpacing: 1, fontWeight: 600 }}>
                 {gpsIcon} {gpsStatus === "active" ? "GPS" : gpsLabel}
               </span>
-              <span style={{ fontSize: 11, color: t.accent, letterSpacing: 2, opacity: 0.6 }}>
+              <span style={{ fontSize: 12, color: t.accent, letterSpacing: 2, fontWeight: 600 }}>
                 {fmt(elapsed)} / {fmt(totalDurSegs)}
               </span>
             </div>
