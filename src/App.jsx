@@ -447,8 +447,8 @@ export default function App() {
                   {fmt(timeLeft)}
                 </div>
 
-                {/* GPS stats row — always show when active */}
-                {phase === "active" || phase === "paused" ? (
+                {/* Stats row — always show when active */}
+                {(phase === "active" || phase === "paused") && (
                   <div style={{
                     display: "flex", gap: 10, marginBottom: 14, width: "100%", maxWidth: 320,
                   }}>
@@ -472,7 +472,7 @@ export default function App() {
                       </div>
                     ))}
                   </div>
-                ) : null}
+                )}
 
                 {/* GPS waiting indicator */}
                 {(gpsStatus === "waiting" || gpsStatus === "denied") && (
