@@ -97,6 +97,7 @@ export default function App() {
   const [runDist, setRunDist] = useState(0);           // only during run segments
   const [curSpeed, setCurSpeed] = useState(0);         // m/s
   const [gpsStatus, setGpsStatus] = useState("off");   // off | waiting | active | denied
+  const [totalSteps, setTotalSteps] = useState(0);     // all steps during workout
 
   const audioRef = useRef(null);
   const segsRef = useRef([]);
@@ -143,6 +144,9 @@ export default function App() {
           if (d < 50) {
             setTotalDist(prev => prev + d);
             if (isRunSegRef.current) setRunDist(prev => prev + d);
+            // Estimate steps from distance (avg step ≈ 0.7m)
+            const steps = Math.round(d / 0.7);
+            setTotalSteps(prev => prev + steps);
             // Smooth speed from distance if device doesn't provide it
             if (speed === null || speed === undefined) {
               const dt = (pos.timestamp - lastPosRef.current.ts) / 1000;
@@ -188,7 +192,7 @@ export default function App() {
     const ctx = audioRef.current;
     const segs = buildSegments(plan);
     segsRef.current = segs;
-    setTotalDist(0); setRunDist(0); setCurSpeed(0);
+    setTotalDist(0); setRunDist(0); setCurSpeed(0); setTotalSteps(0);
     signal(ctx, "start");
     setPhase("active");
     setElapsed(0);
@@ -229,7 +233,7 @@ export default function App() {
   const reset  = () => {
     stop(); stopGps(); releaseWakeLock();
     setPhase("idle"); setSegIdx(0); setTimeLeft(0); setElapsed(0);
-    setTotalDist(0); setRunDist(0); setCurSpeed(0);
+    setTotalDist(0); setRunDist(0); setCurSpeed(0); setTotalSteps(0);
     isRunSegRef.current = false;
   };
 
@@ -308,7 +312,7 @@ export default function App() {
         {/* Plan picker */}
         {showPlan && !isActive && phase !== "done" && (
           <div style={{ padding: "14px 20px", flex: 1, overflowY: "auto" }}>
-            <div style={{ fontSize: 9, letterSpacing: 3, color: t.dim, marginBottom: 12, textTransform: "uppercase" }}>
+            <div style={{ fontSize: 12, letterSpacing: 3, color: t.accent, marginBottom: 12, textTransform: "uppercase", fontWeight: 700 }}>
               Wybierz tydzień planu
             </div>
             {PLAN.map((p, i) => (
@@ -320,12 +324,12 @@ export default function App() {
                 cursor: "pointer", textAlign: "left",
               }}>
                 <div>
-                  <div style={{ fontSize: 13, color: weekIdx === i ? t.accent : "#666", fontWeight: 700 }}>
+                  <div style={{ fontSize: 16, color: weekIdx === i ? t.accent : "#888", fontWeight: 700 }}>
                     Tydzień {p.week}
                   </div>
-                  <div style={{ fontSize: 11, color: "#333", marginTop: 3 }}>{p.label}</div>
+                  <div style={{ fontSize: 14, color: "#666", marginTop: 3 }}>{p.label}</div>
                 </div>
-                <div style={{ fontSize: 11, color: "#333", fontVariantNumeric: "tabular-nums" }}>
+                <div style={{ fontSize: 14, color: "#888", fontVariantNumeric: "tabular-nums" }}>
                   {fmt(buildSegments(p).reduce((a, s) => a + s.duration, 0))}
                 </div>
               </button>
@@ -353,10 +357,11 @@ export default function App() {
                 <div style={{ fontSize: 12, color: t.dim, letterSpacing: 2, marginBottom: 20 }}>TRENING UKOŃCZONY</div>
 
                 {/* Summary stats */}
-                <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 8 }}>
+                <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 8, flexWrap: "wrap" }}>
                   {[
                     { label: "CZAS", value: fmt(elapsed) },
                     { label: "DYSTANS", value: `${fmtKm(totalDist)} km` },
+                    { label: "KROKI", value: `${totalSteps}` },
                     { label: "BIEG", value: `${fmtKm(runDist)} km` },
                   ].map(({ label, value }) => (
                     <div key={label} style={{
@@ -442,15 +447,15 @@ export default function App() {
                   {fmt(timeLeft)}
                 </div>
 
-                {/* GPS stats row — only show when GPS active */}
-                {gpsStatus === "active" && (
+                {/* GPS stats row — always show when active */}
+                {phase === "active" || phase === "paused" ? (
                   <div style={{
                     display: "flex", gap: 10, marginBottom: 14, width: "100%", maxWidth: 320,
                   }}>
                     {[
                       { label: "DYSTANS", value: `${fmtKm(totalDist)} km` },
-                      { label: "BIEG", value: `${fmtKm(runDist)} km` },
-                      { label: "TEMPO", value: `${fmtPace(curSpeed)}/km` },
+                      { label: "KROKI", value: `${totalSteps}` },
+                      ...(gpsStatus === "active" ? [{ label: "TEMPO", value: `${fmtPace(curSpeed)}/km` }] : []),
                     ].map(({ label, value }) => (
                       <div key={label} style={{
                         flex: 1, textAlign: "center",
@@ -467,7 +472,7 @@ export default function App() {
                       </div>
                     ))}
                   </div>
-                )}
+                ) : null}
 
                 {/* GPS waiting indicator */}
                 {(gpsStatus === "waiting" || gpsStatus === "denied") && (

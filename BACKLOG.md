@@ -1,7 +1,16 @@
 # Backlog & Pomysły — Bieg Timer
 
 ## 🚀 P0 — Krytyczne (przed launchem)
-Nic — aplikacja jest w v1 i deployowana.
+- [ ] **Zwiększyć czytelność napisów na ekranie wyboru planu**
+  - Font-size dla "Tydzień X" i schematu treningu (P0)
+
+- [ ] **Licznik km i kroków podczas całego treningu** — licznik jest, ale tylko dla biegu
+  - Pokazywać dystans całkowity + licznik WSZYSTKICH kroków (walk + run + warmup + cooldown)
+  - Odświeżać dynamicznie podczas treningu
+
+- [ ] **Domyślnie pokazuj plan wyboru na start** — localStorage pamiętanie
+  - Ostatnio wybrany plan → domyślnie na ekranie idle
+  - Pamięć aktualnego postępu — jeśli user był w trakcie treningu
 
 ## 📊 P1 — Ważne (następny kwartał)
 - [ ] **Historia treningów** — localStorage z datą, tygodniem, czasem, dystansem
@@ -42,4 +51,4 @@ Nic — aplikacja jest w v1 i deployowana.
 
 ---
 
-**Ostatnia aktualizacja:** 29 marca 2026
+**Ostatnia aktualizacja:** 29 marca 2026, 11:35
