@@ -1,54 +1,45 @@
 # Backlog & Pomysły — Bieg Timer
 
-## 🚀 P0 — Krytyczne (przed launchem)
-- [ ] **Zwiększyć czytelność napisów na ekranie wyboru planu**
-  - Font-size dla "Tydzień X" i schematu treningu (P0)
+## ✅ Zrobione — v1 live
+- [x] Zwiększyć czytelność napisów na ekranie wyboru planu
+- [x] Licznik km i kroków podczas całego treningu
+- [x] Domyślnie pokazuj plan wyboru na start + localStorage
+- [x] Przeskok między etapami (⏭ skip button)
+- [x] Countdown wibracje (5s przed zmianą fazy) — nie działa na Safari iOS
+- [x] Odhaczanie/ukrywanie ukończonych planów
+- [x] Safe area iPhone (notch/dynamic island)
+- [x] PWA na ekran główny iPhone
 
-- [ ] **Licznik km i kroków podczas całego treningu** — licznik jest, ale tylko dla biegu
-  - Pokazywać dystans całkowity + licznik WSZYSTKICH kroków (walk + run + warmup + cooldown)
-  - Odświeżać dynamicznie podczas treningu
-
-- [ ] **Domyślnie pokazuj plan wyboru na start** — localStorage pamiętanie
-  - Ostatnio wybrany plan → domyślnie na ekranie idle
-  - Pamięć aktualnego postępu — jeśli user był w trakcie treningu
-
-## 📊 P1 — Ważne (następny kwartał)
+## 📊 P1 — Ważne (siguiente)
 - [ ] **Historia treningów** — localStorage z datą, tygodniem, czasem, dystansem
-  - Pokaż listę ostatnich treningów na ekranie idle
-  - Klikalne — przejście do szczegółów
+  - Pokaż listę ostatnich treningów (czy na osobnym ekranie czy w idle?)
+  - Stats: ile razy ukończyłem plan, ile km w sumie, średnie tempo
 
-- [ ] **Wykres dystansu po treningu** — visualizacja GPS track'u po zakończeniu
-  - Może być prosta mapka lub liniowy graph (czas vs dystans)
+- [ ] **Powiadomienia push** — remindery przed treningiem
+  - Integracja z Notification API (iOS 16.4+)
+  - Domyślnie: czw + nd, 15 min przed 7:00
 
-- [ ] **Powiadomienia push** — remindery przed zaplanowanym treningiem
-  - Domyślnie na czw i nd o godz. 7:00 (albo konfigurowalnie)
+- [ ] **Eksport/sync ostatniego treningu** — zapisz do chmury (Google Drive? iCloud?)
+  - JSON z dystansem, czasem, GPS track'iem
 
 ## 🎯 P2 — Nice to have (przyszłość)
-- [ ] **Eksport do GPX** — zapisz track jako plik do innych aplikacji
-  - Button na ekranie done
+- [ ] **Eksport do GPX** — zapisz track jako plik
+  - Button na ekranie done, download do Files app
 
-- [ ] **Kalibracja GPS** — warm-up przed startem do otrzymania dokładnego sygnału
-  - Skip automatycznie po N sekund lub gdy GPS się ustabilizuje
+- [ ] **Statystyki long-term** — chart z dystansami po każdym treningu
+  - Timeline: kiedy ostatni trening, próg streaks
 
-- [ ] **Statystyki długoterminowe** — średnie tempo, łączny dystans, progres względem planu
-  - Dashboard z chartami
+- [ ] **Integracja Strava** — OAuth + activity upload
+  - Automatycznie po zakończeniu treningu
 
-- [ ] **Konfiguracja planu** — custom schemat zamiast hardcoded'a
-  - UI do edycji runMin, walkMin, rounds
+- [ ] **Custom plany** — edytor schematów zamiast hardcoded
+  - runMin, walkMin, rounds configuratble w UI
 
-- [ ] **Ciemny/jasny motyw toggle** — alternatywa do Neon B (jeśli ktoś chce)
+- [ ] **Alternatywne motywy** — Light mode, inne kolory (poza Neon B)
 
-- [ ] **Offline mode** — pełna funkcjonalność bez internetu
-  - Już częściowo jest (PWA), ale doprecyzować co wymaga sieci
-
-- [ ] **Integracja Strava** — upload treningu do Stravy
-  - OAuth, activity_create endpoint
-
-## 🤔 Niezbadane (research)
-- Czy Mike ma konkretne UI feedback'i z testów?
-- Czy inni biegacze chcą tego narzędzia — market potential?
-- Kosztolisy — czy to ma być paid, freemium, czy open source?
+- [ ] **Offline полный** — cache assets, działa bez internetu całkowicie
 
 ---
 
-**Ostatnia aktualizacja:** 29 marca 2026, 11:35
+**Ostatnia aktualizacja:** 29 marca 2026, 12:00
+**Status:** v1 live na https://mcmajkel.github.io/running-timer/
