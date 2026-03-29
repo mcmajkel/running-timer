@@ -2,7 +2,7 @@
   "name": "Bieg Timer",
   "short_name": "Bieg",
   "description": "Interwałowy timer biegowy z GPS",
-  "start_url": "/",
+  "start_url": "/running-timer/",
   "display": "standalone",
   "background_color": "#080808",
   "theme_color": "#080808",
