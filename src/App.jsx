@@ -22,6 +22,15 @@ const THEME = {
   done:     { bg: "#0a0600", accent: "#ffd700", timer: "#ffd700", label: "#ffd700", dim: "#806800", next: "#ffc000", glow: "#ffd70044" },
 };
 
+const LIGHT_THEME = {
+  run:      { bg: "#f0fff8", accent: "#007a40", timer: "#007a40", label: "#007a40", dim: "#44aa77", next: "#005c30", glow: "transparent" },
+  walk:     { bg: "#eef6ff", accent: "#005f88", timer: "#005f88", label: "#005f88", dim: "#4488aa", next: "#004466", glow: "transparent" },
+  warmup:   { bg: "#fff8f0", accent: "#cc4400", timer: "#cc4400", label: "#cc4400", dim: "#aa6622", next: "#993300", glow: "transparent" },
+  cooldown: { bg: "#f8f0ff", accent: "#6622aa", timer: "#6622aa", label: "#6622aa", dim: "#9944cc", next: "#4411aa", glow: "transparent" },
+  idle:     { bg: "#f5f5f5", accent: "#222222", timer: "#222222", label: "#222222", dim: "#888888", next: "#555",    glow: "transparent" },
+  done:     { bg: "#fffbf0", accent: "#996600", timer: "#996600", label: "#996600", dim: "#bb8800", next: "#775500", glow: "transparent" },
+};
+
 function beep(ctx, freq, dur, vol = 0.5) {
   if (!ctx) return;
   const o = ctx.createOscillator(), g = ctx.createGain();
@@ -93,6 +102,7 @@ export default function App() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [showPlan, setShowPlan] = useState(true);  // domyślnie pokazuj picker na idle
+  const [lightMode, setLightMode] = useState(() => localStorage.getItem("lightMode") === "1");
   const [showHidden, setShowHidden] = useState(false);
   const [hiddenPlans, setHiddenPlans] = useState(() =>
     new Set(JSON.parse(localStorage.getItem("hiddenPlans") || "[]"))
@@ -272,11 +282,36 @@ export default function App() {
     isRunSegRef.current = false;
   };
 
+  const toggleLightMode = () => {
+    setLightMode(prev => {
+      const next = !prev;
+      localStorage.setItem("lightMode", next ? "1" : "0");
+      return next;
+    });
+  };
+
   const segs = segsRef.current;
   const cur  = segs[segIdx] || { type: "idle", label: "", duration: 1 };
   const next = segs[segIdx + 1];
   const themeKey = phase === "done" ? "done" : phase === "idle" ? "idle" : cur.type;
-  const t = THEME[themeKey] || THEME.idle;
+  const activeTheme = lightMode ? LIGHT_THEME : THEME;
+  const t = activeTheme[themeKey] || activeTheme.idle;
+
+  const ui = {
+    cardBg:         lightMode ? "#ffffff" : "#0d0d0d",
+    cardBorder:     lightMode ? "#e0e0e0" : "#1c1c1c",
+    subtitleColor:  lightMode ? "#999999" : "#666666",
+    dimText:        lightMode ? "#888888" : "#666666",
+    muteText:       lightMode ? "#aaaaaa" : "#333333",
+    veryMute:       lightMode ? "#bbbbbb" : "#222222",
+    btnBg:          lightMode ? "#f0f0f0" : "#111111",
+    btnBorder:      lightMode ? "#dddddd" : "#222222",
+    btnColor:       lightMode ? "#666666" : "#555555",
+    smallBtnBorder: lightMode ? "#d0d0d0" : "#1a1a1a",
+    smallBtnColor:  lightMode ? "#aaaaaa" : "#2a2a2a",
+    overallBg:      lightMode ? "#e0e0e0" : "#181818",
+    weekLabel:      lightMode ? "#888888" : "#888888",
+  };
 
   const segProgress   = cur.duration > 0 ? 1 - timeLeft / cur.duration : 0;
   const totalDurSegs  = segs.reduce((a, s) => a + s.duration, 0);
@@ -324,6 +359,7 @@ export default function App() {
           <span style={{ fontSize: 12, letterSpacing: 3, color: t.accent, textTransform: "uppercase", fontWeight: 700 }}>
             TYG {plan.week}
           </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {!isActive && phase !== "done" && showHidden && (
             <button onClick={() => setShowHidden(false)} style={{
               background: "none", border: "none", color: t.accent, fontSize: 12,
@@ -334,7 +370,7 @@ export default function App() {
           )}
           {isActive && (
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 11, color: gpsStatus === "active" ? t.accent : "#999", letterSpacing: 1, fontWeight: 600 }}>
+              <span style={{ fontSize: 11, color: gpsStatus === "active" ? t.accent : ui.weekLabel, letterSpacing: 1, fontWeight: 600 }}>
                 {gpsIcon} {gpsStatus === "active" ? "GPS" : gpsLabel}
               </span>
               <span style={{ fontSize: 12, color: t.accent, letterSpacing: 2, fontWeight: 600 }}>
@@ -342,6 +378,14 @@ export default function App() {
               </span>
             </div>
           )}
+          <button onClick={toggleLightMode} style={{
+            background: "none", border: "none", fontSize: 18,
+            cursor: "pointer", padding: "2px 4px", lineHeight: 1,
+            opacity: 0.7,
+          }}>
+            {lightMode ? "🌙" : "☀️"}
+          </button>
+          </div>
         </div>
 
         {/* Plan picker */}
@@ -357,19 +401,19 @@ export default function App() {
                 <button key={i} onClick={() => { setWeekIdx(i); localStorage.setItem("lastWeekIdx", i); }} style={{
                   display: "flex", justifyContent: "space-between", alignItems: "center",
                   width: "100%", padding: "12px 16px", marginBottom: 8, borderRadius: 10,
-                  border: weekIdx === i && !isHidden ? `1.5px solid ${t.accent}` : "1.5px solid #1c1c1c",
-                  background: weekIdx === i && !isHidden ? t.accent + "12" : "#0d0d0d",
+                  border: weekIdx === i && !isHidden ? `1.5px solid ${t.accent}` : `1.5px solid ${ui.cardBorder}`,
+                  background: weekIdx === i && !isHidden ? t.accent + "12" : ui.cardBg,
                   cursor: "pointer", textAlign: "left",
                   opacity: isHidden ? 0.4 : 1,
                 }}>
                   <div>
-                    <div style={{ fontSize: 16, color: weekIdx === i && !isHidden ? t.accent : "#888", fontWeight: 700 }}>
+                    <div style={{ fontSize: 16, color: weekIdx === i && !isHidden ? t.accent : ui.weekLabel, fontWeight: 700 }}>
                       Tydzień {p.week}
                     </div>
-                    <div style={{ fontSize: 14, color: "#666", marginTop: 3 }}>{p.label}</div>
+                    <div style={{ fontSize: 14, color: ui.subtitleColor, marginTop: 3 }}>{p.label}</div>
                   </div>
                   <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                    <div style={{ fontSize: 14, color: "#888", fontVariantNumeric: "tabular-nums" }}>
+                    <div style={{ fontSize: 14, color: ui.weekLabel, fontVariantNumeric: "tabular-nums" }}>
                       {fmt(buildSegments(p).reduce((a, s) => a + s.duration, 0))}
                     </div>
                     <button onClick={(e) => { e.stopPropagation(); toggleHidden(i); }} style={{
@@ -385,7 +429,7 @@ export default function App() {
             {hiddenPlans.size > 0 && !showHidden && (
               <button onClick={() => setShowHidden(true)} style={{
                 width: "100%", padding: "12px 16px", marginTop: 16,
-                background: "#0d0d0d", border: "1px solid #1c1c1c",
+                background: ui.cardBg, border: `1px solid ${ui.cardBorder}`,
                 color: t.dim, fontSize: 12, borderRadius: 10,
                 cursor: "pointer", textTransform: "uppercase", letterSpacing: 1,
               }}>
@@ -423,8 +467,8 @@ export default function App() {
                     { label: "BIEG", value: `${fmtKm(runDist)} km` },
                   ].map(({ label, value }) => (
                     <div key={label} style={{
-                      background: "#0f0f0f", borderRadius: 10,
-                      border: `1px solid ${t.accent}22`,
+                      background: ui.cardBg, borderRadius: 10,
+                      border: `1px solid ${t.accent}33`,
                       padding: "12px 14px", textAlign: "center", flex: 1,
                     }}>
                       <div style={{ fontSize: 9, color: t.dim, letterSpacing: 2, marginBottom: 4 }}>{label}</div>
@@ -443,28 +487,28 @@ export default function App() {
             {/* IDLE */}
             {phase === "idle" && (
               <div style={{ textAlign: "center", width: "100%" }}>
-                <div style={{ fontSize: 12, color: "#333", letterSpacing: 3, textTransform: "uppercase", marginBottom: 20 }}>
+                <div style={{ fontSize: 12, color: ui.muteText, letterSpacing: 3, textTransform: "uppercase", marginBottom: 20 }}>
                   {plan.label}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%", marginBottom: 28 }}>
                   {buildSegments(plan).map((s, i) => {
-                    const st = THEME[s.type] || THEME.idle;
+                    const st = activeTheme[s.type] || activeTheme.idle;
                     return (
                       <div key={i} style={{
                         display: "flex", justifyContent: "space-between",
                         padding: "8px 14px", borderRadius: 8,
-                        background: "#0d0d0d",
+                        background: ui.cardBg,
                         borderLeft: `3px solid ${st.accent}`,
                       }}>
                         <span style={{ fontSize: 12, color: st.accent, fontWeight: 700, letterSpacing: 1 }}>
                           {s.label}{s.round ? ` #${s.round}` : ""}
                         </span>
-                        <span style={{ fontSize: 12, color: "#333", fontVariantNumeric: "tabular-nums" }}>{fmt(s.duration)}</span>
+                        <span style={{ fontSize: 12, color: ui.muteText, fontVariantNumeric: "tabular-nums" }}>{fmt(s.duration)}</span>
                       </div>
                     );
                   })}
                 </div>
-                <div style={{ fontSize: 10, color: "#222", letterSpacing: 2 }}>
+                <div style={{ fontSize: 10, color: ui.veryMute, letterSpacing: 2 }}>
                   📍 GPS uruchomi się automatycznie po starcie
                 </div>
               </div>
@@ -571,7 +615,7 @@ export default function App() {
 
                 {/* Overall progress */}
                 <div style={{ width: "100%", maxWidth: 300 }}>
-                  <div style={{ height: 2, background: "#181818", borderRadius: 1 }}>
+                  <div style={{ height: 2, background: ui.overallBg, borderRadius: 1 }}>
                     <div style={{
                       height: "100%", width: `${totalProgress * 100}%`,
                       background: t.dim + "88", borderRadius: 1, transition: "width 1s linear",
@@ -601,20 +645,20 @@ export default function App() {
             <>
               <button onClick={pause} style={{
                 width: 76, height: 76, borderRadius: "50%",
-                background: "#111", border: "2px solid #222",
-                color: "#555", fontSize: 26, cursor: "pointer",
+                background: ui.btnBg, border: `2px solid ${ui.btnBorder}`,
+                color: ui.btnColor, fontSize: 26, cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>⏸</button>
               <button onClick={skipSeg} style={{
                 width: 44, height: 44, borderRadius: "50%",
-                background: "transparent", border: "1px solid #1a1a1a",
-                color: "#2a2a2a", fontSize: 16, cursor: "pointer",
+                background: "transparent", border: `1px solid ${ui.smallBtnBorder}`,
+                color: ui.smallBtnColor, fontSize: 16, cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>⏭</button>
               <button onClick={reset} style={{
                 width: 44, height: 44, borderRadius: "50%",
-                background: "transparent", border: "1px solid #1a1a1a",
-                color: "#2a2a2a", fontSize: 16, cursor: "pointer",
+                background: "transparent", border: `1px solid ${ui.smallBtnBorder}`,
+                color: ui.smallBtnColor, fontSize: 16, cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>↺</button>
             </>
@@ -630,8 +674,8 @@ export default function App() {
               }}>▶</button>
               <button onClick={reset} style={{
                 width: 44, height: 44, borderRadius: "50%",
-                background: "transparent", border: "1px solid #1a1a1a",
-                color: "#2a2a2a", fontSize: 16, cursor: "pointer",
+                background: "transparent", border: `1px solid ${ui.smallBtnBorder}`,
+                color: ui.smallBtnColor, fontSize: 16, cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>↺</button>
             </>
