@@ -199,7 +199,7 @@ export default function App() {
     isRunSegRef.current = seg.type === "run";
     if (seg.type === "run")  signal(ctx, "run");
     if (seg.type === "walk") signal(ctx, "walk");
-    if (navigator.vibrate) navigator.vibrate(600);  // długi impuls na zmianę
+    navigator.vibrate?.(600);  // długi impuls na zmianę
   }, []);
 
   const skipSeg = useCallback(() => {
@@ -213,7 +213,7 @@ export default function App() {
       isRunSegRef.current = false;
       releaseWakeLock();
       stopGps();
-      if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 500]);
+      navigator.vibrate?.([300, 100, 300, 100, 500]);
     } else {
       goToSeg(segs, next, ctx);
     }
@@ -242,7 +242,7 @@ export default function App() {
       const ctx = audioRef.current;
       if (timeLeftRef.current <= 5 && timeLeftRef.current > 0) {
         signal(ctx, "tick");
-        if (navigator.vibrate) navigator.vibrate(80);  // krótki bzz co sekundę
+        navigator.vibrate?.(80);  // krótki bzz co sekundę
       }
       if (timeLeftRef.current <= 0) {
         const segs = segsRef.current;
@@ -254,7 +254,7 @@ export default function App() {
           isRunSegRef.current = false;
           releaseWakeLock();
           stopGps();
-          if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 500]);
+          navigator.vibrate?.([300, 100, 300, 100, 500]);
         } else {
           goToSeg(segs, next, ctx);
         }
