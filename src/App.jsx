@@ -85,12 +85,18 @@ function labelFontSize(label) {
 }
 
 export default function App() {
-  const [weekIdx, setWeekIdx] = useState(0);
+  const [weekIdx, setWeekIdx] = useState(() =>
+    parseInt(localStorage.getItem("lastWeekIdx") || "0")
+  );
   const [phase, setPhase] = useState("idle");
   const [segIdx, setSegIdx] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
   const [elapsed, setElapsed] = useState(0);
-  const [showPlan, setShowPlan] = useState(false);
+  const [showPlan, setShowPlan] = useState(true);  // domyślnie pokazuj picker na idle
+  const [showHidden, setShowHidden] = useState(false);
+  const [hiddenPlans, setHiddenPlans] = useState(() =>
+    new Set(JSON.parse(localStorage.getItem("hiddenPlans") || "[]"))
+  );
 
   // GPS state
   const [totalDist, setTotalDist] = useState(0);      // all meters
@@ -175,6 +181,15 @@ export default function App() {
 
   const stop = useCallback(() => clearInterval(tickRef.current), []);
 
+  const toggleHidden = (i) => {
+    setHiddenPlans(prev => {
+      const next = new Set(prev);
+      next.has(i) ? next.delete(i) : next.add(i);
+      localStorage.setItem("hiddenPlans", JSON.stringify([...next]));
+      return next;
+    });
+  };
+
   const goToSeg = useCallback((segs, idx, ctx) => {
     segIdxRef.current = idx;
     setSegIdx(idx);
@@ -184,8 +199,25 @@ export default function App() {
     isRunSegRef.current = seg.type === "run";
     if (seg.type === "run")  signal(ctx, "run");
     if (seg.type === "walk") signal(ctx, "walk");
-    if (navigator.vibrate) navigator.vibrate(seg.type === "run" ? [80, 40, 80] : [150]);
+    if (navigator.vibrate) navigator.vibrate(600);  // długi impuls na zmianę
   }, []);
+
+  const skipSeg = useCallback(() => {
+    const segs = segsRef.current;
+    const next = segIdxRef.current + 1;
+    const ctx = audioRef.current;
+    if (next >= segs.length) {
+      clearInterval(tickRef.current);
+      setPhase("done");
+      signal(ctx, "finish");
+      isRunSegRef.current = false;
+      releaseWakeLock();
+      stopGps();
+      if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 500]);
+    } else {
+      goToSeg(segs, next, ctx);
+    }
+  }, [goToSeg, releaseWakeLock, stopGps]);
 
   const startTimer = useCallback(async () => {
     initAudio();
@@ -208,7 +240,10 @@ export default function App() {
       setTimeLeft(timeLeftRef.current);
       setElapsed(e => e + 1);
       const ctx = audioRef.current;
-      if (timeLeftRef.current <= 3 && timeLeftRef.current > 0) signal(ctx, "tick");
+      if (timeLeftRef.current <= 5 && timeLeftRef.current > 0) {
+        signal(ctx, "tick");
+        if (navigator.vibrate) navigator.vibrate(80);  // krótki bzz co sekundę
+      }
       if (timeLeftRef.current <= 0) {
         const segs = segsRef.current;
         const next = segIdxRef.current + 1;
@@ -289,12 +324,12 @@ export default function App() {
           <span style={{ fontSize: 11, letterSpacing: 3, color: t.dim, textTransform: "uppercase", fontWeight: 700 }}>
             TYG {plan.week}
           </span>
-          {!isActive && phase !== "done" && (
-            <button onClick={() => setShowPlan(!showPlan)} style={{
+          {!isActive && phase !== "done" && showHidden && (
+            <button onClick={() => setShowHidden(false)} style={{
               background: "none", border: "none", color: t.dim, fontSize: 11,
               letterSpacing: 2, textTransform: "uppercase", cursor: "pointer", padding: 0,
             }}>
-              {showPlan ? "✕ ZAMKNIJ" : "≡ WYBIERZ PLAN"}
+              ✕ POKAŻ AKTYWNE
             </button>
           )}
           {isActive && (
@@ -310,30 +345,53 @@ export default function App() {
         </div>
 
         {/* Plan picker */}
-        {showPlan && !isActive && phase !== "done" && (
+        {!isActive && phase !== "done" && (
           <div style={{ padding: "14px 20px", flex: 1, overflowY: "auto" }}>
             <div style={{ fontSize: 12, letterSpacing: 3, color: t.accent, marginBottom: 12, textTransform: "uppercase", fontWeight: 700 }}>
               Wybierz tydzień planu
             </div>
-            {PLAN.map((p, i) => (
-              <button key={i} onClick={() => { setWeekIdx(i); setShowPlan(false); }} style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                width: "100%", padding: "12px 16px", marginBottom: 8, borderRadius: 10,
-                border: weekIdx === i ? `1.5px solid ${t.accent}` : "1.5px solid #1c1c1c",
-                background: weekIdx === i ? t.accent + "12" : "#0d0d0d",
-                cursor: "pointer", textAlign: "left",
-              }}>
-                <div>
-                  <div style={{ fontSize: 16, color: weekIdx === i ? t.accent : "#888", fontWeight: 700 }}>
-                    Tydzień {p.week}
+            {PLAN.map((p, i) => {
+              const isHidden = hiddenPlans.has(i);
+              const shouldShow = !isHidden || showHidden;
+              return shouldShow ? (
+                <button key={i} onClick={() => { setWeekIdx(i); localStorage.setItem("lastWeekIdx", i); }} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  width: "100%", padding: "12px 16px", marginBottom: 8, borderRadius: 10,
+                  border: weekIdx === i && !isHidden ? `1.5px solid ${t.accent}` : "1.5px solid #1c1c1c",
+                  background: weekIdx === i && !isHidden ? t.accent + "12" : "#0d0d0d",
+                  cursor: "pointer", textAlign: "left",
+                  opacity: isHidden ? 0.4 : 1,
+                }}>
+                  <div>
+                    <div style={{ fontSize: 16, color: weekIdx === i && !isHidden ? t.accent : "#888", fontWeight: 700 }}>
+                      Tydzień {p.week}
+                    </div>
+                    <div style={{ fontSize: 14, color: "#666", marginTop: 3 }}>{p.label}</div>
                   </div>
-                  <div style={{ fontSize: 14, color: "#666", marginTop: 3 }}>{p.label}</div>
-                </div>
-                <div style={{ fontSize: 14, color: "#888", fontVariantNumeric: "tabular-nums" }}>
-                  {fmt(buildSegments(p).reduce((a, s) => a + s.duration, 0))}
-                </div>
+                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                    <div style={{ fontSize: 14, color: "#888", fontVariantNumeric: "tabular-nums" }}>
+                      {fmt(buildSegments(p).reduce((a, s) => a + s.duration, 0))}
+                    </div>
+                    <button onClick={(e) => { e.stopPropagation(); toggleHidden(i); }} style={{
+                      background: "none", border: "none", color: t.dim, fontSize: 16,
+                      cursor: "pointer", padding: 0, display: "flex", alignItems: "center",
+                    }}>
+                      {isHidden ? "👁" : "✓"}
+                    </button>
+                  </div>
+                </button>
+              ) : null;
+            })}
+            {hiddenPlans.size > 0 && !showHidden && (
+              <button onClick={() => setShowHidden(true)} style={{
+                width: "100%", padding: "12px 16px", marginTop: 16,
+                background: "#0d0d0d", border: "1px solid #1c1c1c",
+                color: t.dim, fontSize: 12, borderRadius: 10,
+                cursor: "pointer", textTransform: "uppercase", letterSpacing: 1,
+              }}>
+                Pokaż {hiddenPlans.size} ukończone{hiddenPlans.size !== 1 ? "" : ""}
               </button>
-            ))}
+            )}
           </div>
         )}
 
@@ -547,6 +605,12 @@ export default function App() {
                 color: "#555", fontSize: 26, cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>⏸</button>
+              <button onClick={skipSeg} style={{
+                width: 44, height: 44, borderRadius: "50%",
+                background: "transparent", border: "1px solid #1a1a1a",
+                color: "#2a2a2a", fontSize: 16, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>⏭</button>
               <button onClick={reset} style={{
                 width: 44, height: 44, borderRadius: "50%",
                 background: "transparent", border: "1px solid #1a1a1a",
